@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Banca Pro">
+<meta name="theme-color" content="#0a0a0a">
+<title>Banca Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0f0f0;--muted:#666;--muted2:#333;--green:#4ade80;--gbg:rgba(74,222,128,0.1);--gbd:rgba(74,222,128,0.25);--red:#f87171;--rbg:rgba(248,113,113,0.1);--rbd:rgba(248,113,113,0.25);--gold:#fbbf24;--ybg:rgba(251,191,36,0.1);--ybd:rgba(251,191,36,0.25);--blue:#60a5fa;--bbg:rgba(96,165,250,0.1);--bbd:rgba(96,165,250,0.25);--r:14px;--rs:10px;--nav:64px;--sb:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100dvh;overflow-x:hidden}
+.header{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:17px;font-weight:700;letter-spacing:-0.3px}
+.header-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:1px}
+.btn-icon{width:36px;height:36px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--bg);border-top:1px solid var(--border);display:flex;padding-bottom:var(--sb);height:calc(var(--nav) + var(--sb))}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding-top:8px;color:var(--muted);font-size:10px;font-weight:500;user-select:none;transition:color .15s}
+.nav-item.active{color:var(--text)}
+.nav-icon{font-size:18px;line-height:1}
+.page{display:none;padding:16px 16px calc(var(--nav) + var(--sb) + 16px);min-height:100dvh}
+.page.active{display:block}
+.hero{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;background:radial-gradient(circle,rgba(251,191,36,0.1) 0%,transparent 70%);pointer-events:none}
+.hero-lbl{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.hero-val{font-size:38px;font-weight:800;letter-spacing:-1px;font-family:'DM Mono',monospace}
+.hero-meta{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap}
+.hero-meta-item{font-size:12px;color:var(--muted)}
+.hero-meta-item span{font-weight:500}
+.stats-row{display:flex;gap:8px;margin-bottom:10px}
+.stat{flex:1;background:var(--surface2);border-radius:var(--rs);padding:10px;text-align:center}
+.stat-val{font-size:20px;font-weight:700;font-family:'DM Mono',monospace}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.5px;text-transform:uppercase}
+.dia-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.dia-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.dia-title{font-size:13px;font-weight:700}
+.badge{font-size:10px;font-family:'DM Mono',monospace;padding:3px 10px;border-radius:20px}
+.badge.em{background:var(--ybg);color:var(--gold);border:1px solid var(--ybd)}
+.badge.ok{background:var(--gbg);color:var(--green);border:1px solid var(--gbd)}
+.badge.verm{background:var(--rbg);color:var(--red);border:1px solid var(--rbd)}
+.sess-row{display:flex;gap:8px;margin-bottom:12px}
+.sess{flex:1;height:48px;border-radius:var(--rs);border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center}
+.sess.green{background:var(--gbg);border-color:var(--gbd);color:var(--green)}
+.sess.red{background:var(--rbg);border-color:var(--rbd);color:var(--red)}
+.sess.next{border-color:rgba(255,255,255,0.25);animation:pb 2s infinite}
+.sess.locked{opacity:.2}
+@keyframes pb{0%,100%{border-color:rgba(255,255,255,0.12)}50%{border-color:rgba(255,255,255,0.35)}}
+.act-row{display:flex;gap:8px}
+.act-btn{flex:1;height:50px;border-radius:var(--rs);font-size:16px;font-weight:700;cursor:pointer;border:none;font-family:'Syne',sans-serif;transition:transform .1s,opacity .1s}
+.act-btn:active{transform:scale(0.97);opacity:.9}
+.act-btn.g{background:var(--green);color:#000}
+.act-btn.r{background:var(--rbg);color:var(--red);border:1px solid var(--rbd)}
+.act-btn.nd{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.act-btn:disabled{opacity:.2;cursor:default;transform:none}
+.banner{border-radius:var(--rs);padding:10px 14px;font-size:12px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.banner.warn{background:var(--rbg);border:1px solid var(--rbd);color:var(--red)}
+.banner.ok{background:var(--gbg);border:1px solid var(--gbd);color:var(--green)}
+.banner.info{background:var(--bbg);border:1px solid var(--bbd);color:var(--blue)}
+.aposta-info{background:var(--surface2);border-radius:var(--rs);padding:10px 14px;margin-top:10px;display:flex;gap:12px;flex-wrap:wrap}
+.ap-item{font-size:11px;color:var(--muted)}
+.ap-item span{color:var(--text);font-family:'DM Mono',monospace;font-weight:500}
+/* HISTORICO */
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hist-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.hist-dia{font-size:13px;font-weight:700;min-width:38px}
+.hist-dots{display:flex;gap:4px;flex-wrap:wrap}
+.hdot{width:8px;height:8px;border-radius:50%}
+.hdot.g{background:var(--green)}.hdot.r{background:var(--red)}.hdot.e{background:var(--muted2)}
+.hist-right{text-align:right;flex-shrink:0}
+.hist-lucro{font-size:14px;font-weight:600;font-family:'DM Mono',monospace}
+.hist-banca{font-size:11px;color:var(--muted);margin-top:1px}
+.btn-del{width:28px;height:28px;border-radius:6px;background:var(--rbg);border:1px solid var(--rbd);color:var(--red);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* CONFIG */
+.cfg-section{margin-bottom:18px}
+.cfg-title{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.cfg-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.cfg-row label{font-size:13px;font-weight:500;flex:1}
+.cfg-row input{background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:6px 10px;font-size:14px;font-family:'DM Mono',monospace;font-weight:500;width:90px;text-align:right;outline:none}
+.cfg-row input:focus{border-color:rgba(255,255,255,0.3)}
+.cfg-calc{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;text-align:right}
+.cfg-auto{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+/* CENARIOS */
+.cen-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.cen{border-radius:var(--rs);padding:12px 10px;border:1px solid var(--border)}
+.cen.otm{background:rgba(74,222,128,0.06);border-color:var(--gbd)}
+.cen.real{background:rgba(251,191,36,0.06);border-color:var(--ybd)}
+.cen.pess{background:var(--rbg);border-color:var(--rbd)}
+.cen-lbl{font-size:9px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.cen-val{font-size:16px;font-weight:700;font-family:'DM Mono',monospace}
+.cen-val.otm{color:var(--green)}.cen-val.real{color:var(--gold)}.cen-val.pess{color:var(--red)}
+.cen-sub{font-size:10px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace}
+.cen-reds{font-size:10px;color:var(--muted);margin-top:4px}
+/* PROJECAO */
+.proj-hd{display:grid;grid-template-columns:26px 1fr 1fr 1fr;gap:6px;padding:6px 0;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+.proj-row{display:grid;grid-template-columns:26px 1fr 1fr 1fr;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.proj-row:last-child{border-bottom:none}
+.proj-row.hoje{background:rgba(255,255,255,0.04);border-radius:6px;padding:8px 6px;margin:0 -6px}
+.proj-num{color:var(--muted);font-family:'DM Mono',monospace;font-size:11px}
+.proj-val{font-family:'DM Mono',monospace;font-weight:500}
+/* MESES */
+.mes-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:14px 16px;margin-bottom:8px}
+.mes-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mes-label{font-size:13px;font-weight:700}
+.mes-retorno{font-size:12px;font-family:'DM Mono',monospace;font-weight:600}
+.mes-stats{display:flex;gap:16px;flex-wrap:wrap}
+.mes-stat{font-size:11px;color:var(--muted)}
+.mes-stat span{color:var(--text);font-family:'DM Mono',monospace}
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:16px;margin-bottom:12px;overflow:hidden}
+.chart-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.chart-wrap canvas{display:block;width:100%!important;height:200px!important}
+/* UTIL */
+.sec-title{font-size:13px;font-weight:700;margin-bottom:8px;margin-top:18px;display:flex;align-items:center;justify-content:space-between}
+.sec-title:first-child{margin-top:0}
+.sec-title a{font-size:11px;color:var(--muted);font-weight:400;cursor:pointer}
+.btn-save{width:100%;height:50px;border-radius:var(--rs);background:var(--text);color:var(--bg);font-size:15px;font-weight:700;border:none;font-family:'Syne',sans-serif;cursor:pointer;margin-top:6px;transition:opacity .15s}
+.btn-save:active{opacity:.85}
+.btn-danger{width:100%;padding:12px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd);border-radius:var(--rs);font-size:13px;font-family:'Syne',sans-serif;cursor:pointer;margin-top:8px}
+.btn-fechar-mes{width:100%;height:50px;border-radius:var(--rs);background:var(--bbg);color:var(--blue);border:1px solid var(--bbd);font-size:15px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;margin-bottom:10px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding:16px}
+.modal-box{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:20px;width:100%;max-width:420px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:8px}
+.modal-msg{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.modal-btns{display:flex;gap:8px}
+.modal-btn{flex:1;height:46px;border-radius:var(--rs);font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;border:none}
+.modal-btn.cancel{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.modal-btn.confirm{background:var(--text);color:var(--bg)}
+.modal-btn.danger{background:var(--red);color:#000}
+.saque-input{width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:10px 14px;font-size:18px;font-family:'DM Mono',monospace;font-weight:700;text-align:center;outline:none;margin:12px 0;box-sizing:border-box}
+.saque-input:focus{border-color:rgba(255,255,255,0.3)}
+.saque-preview{text-align:center;font-size:12px;color:var(--muted);margin-bottom:4px;font-family:'DM Mono',monospace}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);padding:10px 18px;font-size:13px;z-index:300;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s}
+.toast.show{opacity:1}
+
+.lp{color:var(--green)}.ln{color:var(--red)}.lz{color:var(--muted)}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+.empty-ico{font-size:32px;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div><div class="header-title">Banca Pro</div><div class="header-sub" id="hdate"></div></div>
+  <div class="btn-icon" onclick="go('config')">⚙</div>
+</div>
+
+<!-- HOJE -->
+<div class="page active" id="page-hoje">
+  <div class="hero">
+    <div class="hero-lbl">Banca atual</div>
+    <div class="hero-val" id="h-banca">R$0,00</div>
+    <div class="hero-meta">
+      <div class="hero-meta-item">Dia <span id="h-dia">1</span>/<span id="h-dias">30</span></div>
+      <div class="hero-meta-item">Acumulado <span id="h-acum" class="lz">+R$0,00</span></div>
+    </div>
+  </div>
+  <div id="banner-area"></div>
+  <div class="dia-card">
+    <div class="dia-hd">
+      <div class="dia-title" id="dc-title">Dia 1 — Hoje</div>
+      <div class="badge em" id="dc-badge">em andamento</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val lp" id="s-greens">0</div><div class="stat-lbl">Greens</div></div>
+      <div class="stat"><div class="stat-val ln" id="s-reds">0</div><div class="stat-lbl">Reds</div></div>
+      <div class="stat"><div class="stat-val lz" id="s-lucro">R$0</div><div class="stat-lbl">Resultado</div></div>
+    </div>
+    <div class="sess-row" id="sess-row"></div>
+    <div class="act-row" id="act-row"></div>
+    <div class="aposta-info" id="aposta-info"></div>
+  </div>
+  <div class="sec-title">Últimos dias <a onclick="go('hist')">ver tudo →</a></div>
+  <div id="mini-hist"></div>
+</div>
+
+<!-- HISTORICO -->
+<div class="page" id="page-hist">
+  <div id="hist-resumo" style="margin-bottom:14px"></div>
+  <div id="fechar-mes-area"></div>
+  <div class="sec-title">
+    Histórico completo
+    <a onclick="limparMesAtual()">limpar tudo</a>
+  </div>
+  <div id="hist-list"></div>
+</div>
+
+<!-- PROJECAO -->
+<div class="page" id="page-proj">
+  <div class="sec-title">Cenários — <span id="p-dias">30</span> dias</div>
+  <div id="cen-subtitulo" style="font-size:11px;color:var(--muted);margin-bottom:10px;font-family:'DM Mono',monospace"></div>
+  <div class="cen-grid" id="cen-grid"></div>
+  <div class="sec-title">Projeção diária (realista)</div>
+  <div class="proj-hd"><span>#</span><span>Banca</span><span>L/green</span><span>Real</span></div>
+  <div id="proj-list"></div>
+</div>
+
+<!-- MESES -->
+<div class="page" id="page-meses">
+  <div id="charts-area"></div>
+  <div class="sec-title">Histórico por mês</div>
+  <div id="meses-list"></div>
+</div>
+
+<!-- CONFIG -->
+<div class="page" id="page-config">
+  <div class="cfg-section">
+    <div class="cfg-title">Banca & Risco</div>
+    <div class="cfg-row"><label>Banca inicial (R$)</label><input type="number" id="c-banca" value="100" min="1"></div>
+    <div class="cfg-row"><label>Risco por sessão (%)</label><input type="number" id="c-risco" value="10" min="1" max="50" step="0.5" oninput="atualizaCalc()"></div>
+    <div class="cfg-row"><label>Sessões por dia</label><input type="number" id="c-sessoes" value="3" min="1" max="10" oninput="atualizaCalc()"></div>
+    <div class="cfg-row"><label>Dias no mês</label><input type="number" id="c-dias" value="30" min="1" max="31"></div>
+  </div>
+  <div class="cfg-section">
+    <div class="cfg-title">Multiplicadores</div>
+    <div class="cfg-row"><label>Odd M1 (conservador)</label><input type="number" id="c-m1" value="1.25" min="1.01" step="0.01" oninput="atualizaCalc()"></div>
+    <div class="cfg-row"><label>Prob. crash M1</label><span class="cfg-calc" id="c-pm1">22,4%</span></div>
+    <div class="cfg-row"><label>Odd M2 (agressivo)</label><input type="number" id="c-m2" value="2.00" min="1.01" step="0.01" oninput="atualizaCalc()"></div>
+    <div class="cfg-row"><label>Prob. crash M2</label><span class="cfg-calc" id="c-pm2">51,5%</span></div>
+  </div>
+  <div class="cfg-section">
+    <div class="cfg-title">Reds por semana (auto, editável)</div>
+    <div class="cfg-row"><label>Otimista <span class="cfg-auto" id="c-rotm-auto"></span></label><input type="number" id="c-rotm" min="0" max="30"></div>
+    <div class="cfg-row"><label>Realista <span class="cfg-auto" id="c-rreal-auto"></span></label><input type="number" id="c-rreal" min="0" max="30"></div>
+    <div class="cfg-row"><label>Pessimista <span class="cfg-auto" id="c-rpess-auto"></span></label><input type="number" id="c-rpess" min="0" max="30"></div>
+  </div>
+  <button class="btn-save" onclick="salvar()">Salvar configurações</button>
+  <button class="btn-danger" onclick="resetarTudo()">Resetar todos os dados (meses incluídos)</button>
+</div>
+
+<nav class="nav">
+  <div class="nav-item active" id="nav-hoje" onclick="go('hoje')"><span class="nav-icon">◎</span><span>Hoje</span></div>
+  <div class="nav-item" id="nav-hist" onclick="go('hist')"><span class="nav-icon">≡</span><span>Histórico</span></div>
+  <div class="nav-item" id="nav-proj" onclick="go('proj')"><span class="nav-icon">↗</span><span>Projeção</span></div>
+  <div class="nav-item" id="nav-meses" onclick="go('meses')"><span class="nav-icon">📅</span><span>Meses</span></div>
+  <div class="nav-item" id="nav-config" onclick="go('config')"><span class="nav-icon">⚙</span><span>Config</span></div>
+</nav>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-msg" id="modal-msg"></div>
+    <div class="modal-btns" id="modal-btns"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+
+// ── MODAL / TOAST ─────────────────────────────────────────
+function showModal(title, msg, buttons) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-msg').textContent   = msg;
+  const btns = document.getElementById('modal-btns');
+  btns.innerHTML = '';
+  buttons.forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'modal-btn ' + (b.cls || 'confirm');
+    el.textContent = b.label;
+    el.onclick = () => { closeModal(); b.action(); };
+    btns.appendChild(el);
+  });
+  document.getElementById('modal').style.display = 'flex';
+}
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── STORAGE ──────────────────────────────────────────────
+const KEY      = 'bancapro_v4';
+const KEY_MESES = 'bancapro_meses_v1';
+
+function defCfg() {
+  return { bancaIni:100, risco:10, sessoes:3, dias:30, m1:1.25, m2:2.0, rOtm:null, rReal:null, rPess:null, mesAtual:null };
+}
+function load() {
+  try { const r = localStorage.getItem(KEY); if(r) return JSON.parse(r); } catch(e){}
+  return { config:defCfg(), diario:[] };
+}
+function loadMeses() {
+  try { const r = localStorage.getItem(KEY_MESES); if(r) return JSON.parse(r); } catch(e){}
+  return [];
+}
+function save()      { localStorage.setItem(KEY,      JSON.stringify(st)); }
+function saveMeses() { localStorage.setItem(KEY_MESES, JSON.stringify(meses)); }
+
+let st    = load();
+let meses = loadMeses();
+if (!st.config) st.config = defCfg();
+if (!st.diario) st.diario = [];
+
+function C(k){ return st.config[k]; }
+
+// ── FÓRMULAS ─────────────────────────────────────────────
+function probCrash(odd) { return 1 - 0.97 / odd; }
+
+function calcRedsAuto(s, m1) {
+  const p = probCrash(m1);
+  return { otm:Math.round(p*s*7*0.5), real:Math.round(p*s*7), pess:Math.round(p*s*7*1.5) };
+}
+function getRedsConf() {
+  const auto = calcRedsAuto(C('sessoes'), C('m1'));
+  return {
+    otm:  C('rOtm')  !== null ? C('rOtm')  : auto.otm,
+    real: C('rReal') !== null ? C('rReal') : auto.real,
+    pess: C('rPess') !== null ? C('rPess') : auto.pess
+  };
+}
+function greensEfetivos(rpw) { return C('sessoes') - rpw/7; }
+
+// Sessão (diário) — fórmula exata da planilha
+function calcSessao(banca) {
+  const risco = C('risco')/100, m1=C('m1'), m2=C('m2');
+  const apM1 = Math.min(Math.round(banca*risco), 500);
+  const apM2 = Math.round(apM1*(m1-1));
+  const lucroGreen = (apM1*(m1-1)) + (apM2*(m2-1));
+  const perdaRed   = apM1 + apM2;
+  return { apM1, apM2, lucroGreen:Math.round(lucroGreen*100)/100, perdaRed:Math.round(perdaRed*100)/100, custoRed:Math.round(perdaRed/lucroGreen*10)/10 };
+}
+function calcSessaoCenario(banca) { return calcSessao(banca).lucroGreen; }
+
+function calcCenario(rpw) {
+  const bi=C('bancaIni'), dias=C('dias'), gEf=greensEfetivos(rpw);
+  const bancas=[bi];
+  for(let d=0;d<dias;d++){
+    const b=bancas[d], l=calcSessaoCenario(b)*gEf;
+    bancas.push(Math.max(0,Math.round((b+l)*100)/100));
+  }
+  return bancas;
+}
+
+// ── FORMATAÇÃO ────────────────────────────────────────────
+function fR(v) { return 'R$'+parseFloat(v).toFixed(2).replace('.',','); }
+function fL(v) { const n=parseFloat(v)||0; return (n>=0?'+':'-')+'R$'+Math.abs(n).toFixed(2).replace('.',','); }
+function lc(v) { return v>0?'lp':v<0?'ln':'lz'; }
+function fPct(v) { return (v>=0?'+':'')+parseFloat(v).toFixed(1)+'%'; }
+
+// ── ESTADO ────────────────────────────────────────────────
+function bancaAtual() {
+  if(!st.diario.length) return C('bancaIni');
+  return st.diario[st.diario.length-1].bancaFim;
+}
+function diaAtual() {
+  if(!st.diario.length) return 1;
+  const ult=st.diario[st.diario.length-1];
+  return ult.sessoes.length < C('sessoes') ? ult.dia : ult.dia+1;
+}
+function acumulado() { return st.diario.reduce((a,d)=>a+(d.lucro||0),0); }
+
+function diaEmCurso() {
+  if(!st.diario.length) return null;
+  const d=st.diario[st.diario.length-1];
+  return d.sessoes.length >= C('sessoes') ? null : d;
+}
+
+function mesCompleto() {
+  const diasCompletos = st.diario.filter(x=>x.sessoes.length>=C('sessoes'));
+  return diasCompletos.length >= C('dias');
+}
+
+function iniciarDia() {
+  const b=bancaAtual();
+  st.diario.push({dia:diaAtual(),banca:b,bancaFim:b,sessoes:[],greens:0,reds:0,lucro:0});
+  save();
+}
+
+// ── REGISTRAR / EDITAR ────────────────────────────────────
+function registrar(tipo) {
+  if(!C('mesAtual')){ toast('Defina o mês antes de registrar.'); return; }
+  if(mesCompleto()){ toast('Mês completo! Feche o mês no Histórico.'); return; }
+  let d=diaEmCurso();
+  if(!d){
+    const ult=st.diario[st.diario.length-1];
+    if(ult && ult.sessoes.length<C('sessoes')) return;
+    iniciarDia(); d=diaEmCurso();
+  }
+  const {lucroGreen,perdaRed}=calcSessao(d.banca);
+  if(tipo==='green'){d.sessoes.push('green');d.greens++;d.lucro=Math.round((d.lucro+lucroGreen)*100)/100;}
+  else              {d.sessoes.push('red');  d.reds++;  d.lucro=Math.round((d.lucro-perdaRed )*100)/100;}
+  d.bancaFim=Math.round((d.banca+d.lucro)*100)/100;
+  save(); renderHoje(); renderMiniHist();
+}
+
+function editarSessao(diaIdx, sessIdx) {
+  const d=st.diario[diaIdx];
+  if(!d) return;
+  showModal('Editar sessão', 'Apaga esta sessão e as seguintes deste dia para você registrar novamente.', [
+    { label:'Cancelar', cls:'cancel', action:()=>{} },
+    { label:'Apagar', cls:'danger', action:()=>_editarSessao(diaIdx, sessIdx) }
+  ]); return; }
+function _editarSessao(diaIdx, sessIdx) {
+  const d=st.diario[diaIdx];
+  if(!d) return;
+  d.sessoes=d.sessoes.slice(0,sessIdx);
+  d.greens=0; d.reds=0; d.lucro=0;
+  const {lucroGreen,perdaRed}=calcSessao(d.banca);
+  d.sessoes.forEach(v=>{
+    if(v==='green'){d.greens++;d.lucro=Math.round((d.lucro+lucroGreen)*100)/100;}
+    else           {d.reds++;  d.lucro=Math.round((d.lucro-perdaRed )*100)/100;}
+  });
+  d.bancaFim=Math.round((d.banca+d.lucro)*100)/100;
+  for(let i=diaIdx+1;i<st.diario.length;i++){
+    const prev=st.diario[i-1];
+    st.diario[i].banca=prev.bancaFim;
+    const {lucroGreen:lg,perdaRed:pr}=calcSessao(st.diario[i].banca);
+    let lucro=0;
+    st.diario[i].sessoes.forEach(v=>{
+      if(v==='green') lucro=Math.round((lucro+lg)*100)/100;
+      else            lucro=Math.round((lucro-pr)*100)/100;
+    });
+    st.diario[i].lucro=lucro;
+    st.diario[i].bancaFim=Math.round((st.diario[i].banca+lucro)*100)/100;
+  }
+  save(); renderHoje(); renderMiniHist();
+}
+
+function excluirDia(diaIdx) {
+  showModal('Excluir dia', 'Os dias seguintes serão recalculados automaticamente.', [
+    { label:'Cancelar', cls:'cancel', action:()=>{} },
+    { label:'Excluir', cls:'danger', action:()=>_excluirDia(diaIdx) }
+  ]);
+}
+function _excluirDia(diaIdx) {
+  st.diario.splice(diaIdx,1);
+  // renumera e recalcula banca em cascata
+  for(let i=diaIdx;i<st.diario.length;i++){
+    st.diario[i].dia=i+1;
+    if(i===0){ st.diario[i].banca=C('bancaIni'); }
+    else { st.diario[i].banca=st.diario[i-1].bancaFim; }
+    const {lucroGreen:lg,perdaRed:pr}=calcSessao(st.diario[i].banca);
+    let lucro=0;
+    st.diario[i].sessoes.forEach(v=>{
+      if(v==='green') lucro=Math.round((lucro+lg)*100)/100;
+      else            lucro=Math.round((lucro-pr)*100)/100;
+    });
+    st.diario[i].lucro=lucro;
+    st.diario[i].bancaFim=Math.round((st.diario[i].banca+lucro)*100)/100;
+  }
+  save(); renderHoje(); renderMiniHist(); renderHist();
+}
+
+function proximoDia() {
+  if(mesCompleto()){ toast('Mês completo!'); return; }
+  iniciarDia(); renderHoje(); renderMiniHist();
+}
+
+// ── FECHAR MÊS ────────────────────────────────────────────
+function limparMesAtual() {
+  showModal('Limpar mês atual', 'Apaga todos os dias registrados neste mês. Os meses fechados não são afetados.', [
+    { label:'Cancelar', cls:'cancel', action:()=>{} },
+    { label:'Limpar', cls:'danger', action:()=>{ st.diario=[]; save(); renderHoje(); renderMiniHist(); renderHist(); toast('Histórico do mês apagado.'); } }
+  ]);
+}
+
+function confirmarFecharMes() {
+  const diasValidos = st.diario.filter(x=>x.sessoes.length>0);
+  if(!diasValidos.length){ toast('Nenhum dia registrado.'); return; }
+  const bi = C('bancaIni'), bf = bancaAtual(), lucro = acumulado();
+
+  // Modal com campo de saque
+  document.getElementById('modal-title').textContent = 'Fechar mês';
+  document.getElementById('modal-msg').innerHTML =
+    '<div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">' +
+    '<div style="flex:1;background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted);margin-bottom:4px">BANCA FINAL</div><div style="font-family:DM Mono,monospace;font-weight:700;font-size:16px">' + fR(bf) + '</div></div>' +
+    '<div style="flex:1;background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;color:var(--muted);margin-bottom:4px">LUCRO</div><div style="font-family:DM Mono,monospace;font-weight:700;font-size:16px;color:' + (lucro>=0?'var(--green)':'var(--red)') + '">' + fL(lucro) + '</div></div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">Quanto você vai sacar deste mês?</div>' +
+    '<input class="saque-input" id="saque-val" type="number" min="0" max="' + bf + '" value="0" oninput="atualizaPreviewSaque(' + bf + ')" placeholder="0">' +
+    '<div class="saque-preview" id="saque-preview">Banca do próximo mês: <strong>' + fR(bf) + '</strong></div>';
+
+  const btns = document.getElementById('modal-btns');
+  btns.innerHTML = '';
+  const btnCancel = document.createElement('button');
+  btnCancel.className = 'modal-btn cancel'; btnCancel.textContent = 'Cancelar';
+  btnCancel.onclick = closeModal;
+  const btnConfirm = document.createElement('button');
+  btnConfirm.className = 'modal-btn confirm'; btnConfirm.textContent = 'Fechar e salvar';
+  btnConfirm.onclick = () => { closeModal(); fecharMes(parseFloat(document.getElementById('saque-val').value)||0); };
+  btns.appendChild(btnCancel); btns.appendChild(btnConfirm);
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function atualizaPreviewSaque(bf) {
+  const saque = parseFloat(document.getElementById('saque-val').value) || 0;
+  const proximo = Math.max(0, bf - saque);
+  document.getElementById('saque-preview').innerHTML = 'Banca do próximo mês: <strong>' + fR(proximo) + '</strong>';
+}
+
+function fecharMes(saque) {
+  saque = parseFloat(saque) || 0;
+  const diasValidos = st.diario.filter(x=>x.sessoes.length>0);
+  if(!diasValidos.length){ toast('Nenhum dia registrado.'); return; }
+
+  const labelAuto = C('mesAtual') || (() => {
+    const now = new Date();
+    const mn = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return mn[now.getMonth()] + '/' + now.getFullYear();
+  })();
+
+  const bi      = C('bancaIni');
+  const bf      = bancaAtual();
+  const lucro   = acumulado();
+  const retorno = (lucro/bi)*100;
+  const totG    = diasValidos.reduce((a,d)=>a+d.greens,0);
+  const totR    = diasValidos.reduce((a,d)=>a+d.reds,0);
+  const bancaProximo = Math.max(0, Math.round((bf - saque)*100)/100);
+
+  meses.push({
+    label: labelAuto, mes: now.getMonth()+1, ano: now.getFullYear(),
+    bancaIni:bi, bancaFim:bf, saque, bancaProximo, lucro, retorno,
+    greens:totG, reds:totR, dias:diasValidos.length,
+    diario: diasValidos.map(d=>({dia:d.dia,lucro:d.lucro,greens:d.greens,reds:d.reds}))
+  });
+  saveMeses();
+
+  st.diario = [];
+  st.config.bancaIni = bancaProximo;
+  st.config.mesAtual = null;
+  save();
+  const msg = saque > 0
+    ? 'Mês ' + labelAuto + ' salvo! Saque: ' + fR(saque) + ' · Próxima banca: ' + fR(bancaProximo)
+    : 'Mês ' + labelAuto + ' salvo! Banca reinvestida: ' + fR(bancaProximo);
+  toast(msg);
+  renderHoje(); renderMiniHist(); renderHist();
+}
+
+function definirMesAtual() {
+  const mes = document.getElementById('sel-mes').value;
+  const ano = document.getElementById('sel-ano').value;
+  st.config.mesAtual = mes + '/' + ano;
+  save();
+  renderHoje();
+}
+
+// ── RENDER HOJE ───────────────────────────────────────────
+function renderHoje() {
+  const banca=bancaAtual();
+  document.getElementById('h-banca').textContent=fR(banca);
+  document.getElementById('h-dia').textContent=Math.min(diaAtual(),C('dias'));
+  document.getElementById('h-dias').textContent=C('dias');
+  const acum=acumulado();
+  const el=document.getElementById('h-acum');
+  el.textContent=fL(acum); el.className=lc(acum);
+
+  let d=diaEmCurso();
+  const doneDia=!d;
+  if(!d && st.diario.length) d=st.diario[st.diario.length-1];
+  if(!d) d={sessoes:[],greens:0,reds:0,lucro:0,banca};
+
+  document.getElementById('dc-title').textContent=`Dia ${d.dia||diaAtual()} — Hoje`;
+  const badge=document.getElementById('dc-badge');
+  const dayDone=d.sessoes.length>=C('sessoes');
+  if(!dayDone)      {badge.className='badge em';   badge.textContent='em andamento';}
+  else if(d.lucro>0){badge.className='badge ok';   badge.textContent='concluído';}
+  else if(d.lucro<0){badge.className='badge verm'; badge.textContent='no vermelho';}
+  else              {badge.className='badge em';   badge.textContent='zerado';}
+
+  document.getElementById('s-greens').textContent=d.greens;
+  document.getElementById('s-reds').textContent=d.reds;
+  const sl=document.getElementById('s-lucro');
+  sl.textContent=d.sessoes.length?fL(d.lucro):'R$0'; sl.className='stat-val '+lc(d.lucro);
+
+  const dIdx=st.diario.findIndex(x=>x===d);
+  const numS=C('sessoes');
+  let sHtml='';
+  for(let i=0;i<numS;i++){
+    const v=d.sessoes[i];
+    if(v==='green') sHtml+=`<div class="sess green" onclick="editarSessao(${dIdx},${i})" style="cursor:pointer">✓</div>`;
+    else if(v==='red') sHtml+=`<div class="sess red" onclick="editarSessao(${dIdx},${i})" style="cursor:pointer">✗</div>`;
+    else if(i===d.sessoes.length) sHtml+=`<div class="sess next">○</div>`;
+    else sHtml+=`<div class="sess locked">○</div>`;
+  }
+  document.getElementById('sess-row').innerHTML=sHtml;
+
+  const actRow=document.getElementById('act-row');
+  if(dayDone){
+    const esg=mesCompleto();
+    actRow.innerHTML=esg
+      ?`<button class="act-btn nd" style="opacity:.4;cursor:default">Mês completo — feche o mês</button>`
+      :`<button class="act-btn nd" onclick="proximoDia()">Próximo dia →</button>`;
+  } else {
+    actRow.innerHTML=`<button class="act-btn g" onclick="registrar('green')">✓ Green</button><button class="act-btn r" onclick="registrar('red')">✗ Red</button>`;
+  }
+
+  const ban=document.getElementById('banner-area');
+  // Se diário vazio e mês não definido, pede para selecionar o mês
+  if(!st.diario.length && !C('mesAtual')) {
+    ban.innerHTML=`<div class="banner info" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <span>📅 Selecione o mês antes de começar</span>
+      <div style="display:flex;gap:6px;width:100%">
+        <select id="sel-mes" style="flex:1;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:6px 8px;font-family:'Syne',sans-serif;font-size:13px">
+          ${['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'].map((m,i)=>`<option value="${m}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`).join('')}
+        </select>
+        <input id="sel-ano" type="number" value="${new Date().getFullYear()}" style="width:76px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:6px 8px;font-family:'DM Mono',monospace;font-size:13px;outline:none;text-align:center">
+        <button onclick="definirMesAtual()" style="padding:8px 14px;background:var(--green);color:#000;border:none;border-radius:8px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer">OK</button>
+      </div>
+    </div>`;
+  } else if(C('mesAtual') && !st.diario.length) {
+    ban.innerHTML=`<div class="banner info">📅 ${C('mesAtual')} · <span style="cursor:pointer;text-decoration:underline" onclick="st.config.mesAtual=null;save();renderHoje()">alterar</span></div>`;
+  } else if(mesCompleto()){
+    ban.innerHTML=`<div class="banner info">🎉 Mês completo! Vá em Histórico para fechar o mês.</div>`;
+  } else if(C('mesAtual') && st.diario.length) {
+    ban.innerHTML=`<div class="banner info" style="justify-content:space-between">📅 ${C('mesAtual')} <span style="cursor:pointer;color:var(--muted)" onclick="st.config.mesAtual=null;save();renderHoje()">alterar</span></div>`;
+  } else if(d.reds>0&&!dayDone){
+    ban.innerHTML=`<div class="banner warn">⚠ Red registrado — toque na sessão para corrigir.</div>`;
+  } else if(dayDone&&d.lucro>0){
+    ban.innerHTML=`<div class="banner ok">✅ Dia concluído!</div>`;
+  } else if(dayDone&&d.lucro<0){
+    ban.innerHTML=`<div class="banner warn">Dia encerrado no vermelho.</div>`;
+  } else { ban.innerHTML=''; }
+
+  const bancaDoDia=(d&&d.banca)?d.banca:banca;
+  const {apM1,apM2,lucroGreen,perdaRed,custoRed}=calcSessao(bancaDoDia);
+  document.getElementById('aposta-info').innerHTML=`
+    <div class="ap-item">M1 <span>${fR(apM1)}</span></div>
+    <div class="ap-item">M2 <span>${fR(apM2)}</span></div>
+    <div class="ap-item">Verde <span class="lp">${fL(lucroGreen)}</span></div>
+    <div class="ap-item">Red <span class="ln">-${fR(perdaRed)}</span></div>
+    <div class="ap-item">Custo red <span>${custoRed}x</span></div>`;
+}
+
+// ── MINI HIST ─────────────────────────────────────────────
+function histItemHTML(d, diaIdx, showDel) {
+  const numS=C('sessoes');
+  let dots='';
+  for(let i=0;i<numS;i++){
+    const v=d.sessoes[i];
+    dots+=`<div class="hdot ${v==='green'?'g':v==='red'?'r':'e'}"></div>`;
+  }
+  const delBtn=showDel?`<button class="btn-del" onclick="excluirDia(${diaIdx})">✕</button>`:'';
+  return `<div class="hist-item">
+    <div class="hist-left">
+      <div class="hist-dia">Dia ${d.dia}</div>
+      <div class="hist-dots">${dots}</div>
+    </div>
+    <div class="hist-right">
+      <div class="hist-lucro ${lc(d.lucro)}">${fL(d.lucro)}</div>
+      <div class="hist-banca">${fR(d.bancaFim)}</div>
+    </div>
+    ${delBtn}
+  </div>`;
+}
+
+function renderMiniHist() {
+  const el=document.getElementById('mini-hist');
+  const dias=st.diario.filter(x=>x.sessoes.length>0).slice(-5).reverse();
+  el.innerHTML=dias.length?dias.map(d=>histItemHTML(d,st.diario.indexOf(d),false)).join('')
+    :`<div class="empty"><div class="empty-ico">📊</div>Nenhum registro ainda</div>`;
+}
+
+function renderHist() {
+  const el=document.getElementById('hist-list');
+  const validos=st.diario.filter(x=>x.sessoes.length>0);
+  if(!validos.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📋</div>Nenhum dia registrado</div>`;
+    document.getElementById('hist-resumo').innerHTML='';
+    document.getElementById('fechar-mes-area').innerHTML='';
+    return;
+  }
+  el.innerHTML=[...validos].reverse().map(d=>histItemHTML(d,st.diario.indexOf(d),true)).join('');
+
+  const totG=validos.reduce((a,d)=>a+d.greens,0);
+  const totR=validos.reduce((a,d)=>a+d.reds,0);
+  const totL=acumulado();
+  document.getElementById('hist-resumo').innerHTML=`
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val lp">${totG}</div><div class="stat-lbl">Greens</div></div>
+      <div class="stat"><div class="stat-val ln">${totR}</div><div class="stat-lbl">Reds</div></div>
+      <div class="stat"><div class="stat-val ${lc(totL)}">${fL(totL)}</div><div class="stat-lbl">Total</div></div>
+    </div>`;
+
+  // botão fechar mês
+  const fma=document.getElementById('fechar-mes-area');
+  if(mesCompleto()){
+    fma.innerHTML=`<button class="btn-fechar-mes" onclick="confirmarFecharMes()">📅 Fechar mês e salvar</button>`;
+  } else {
+    fma.innerHTML='';
+  }
+}
+
+// ── PROJEÇÃO ──────────────────────────────────────────────
+function renderProj() {
+  const bi=C('bancaIni'), dias=C('dias');
+  const reds=getRedsConf();
+  document.getElementById('p-dias').textContent=dias;
+  const otm=calcCenario(reds.otm), real=calcCenario(reds.real), pess=calcCenario(reds.pess);
+  const gOtm=greensEfetivos(reds.otm), gReal=greensEfetivos(reds.real), gPess=greensEfetivos(reds.pess);
+
+  // Calcula ritmo real do mês até agora
+  const diasJogados = st.diario.filter(x=>x.sessoes.length>0);
+  const diasRestantes = dias - diasJogados.length;
+  const bancaAgora = bancaAtual();
+  const lucroAcum = acumulado();
+
+  // Projeta cenários a partir da banca atual pelos dias restantes
+  function projetarResto(rpw) {
+    let b = bancaAgora;
+    const gEf = greensEfetivos(rpw);
+    for(let d=0; d<diasRestantes; d++){
+      const l = calcSessaoCenario(b) * gEf;
+      b = Math.max(0, Math.round((b+l)*100)/100);
+    }
+    return b;
+  }
+
+  const bfOtm  = diasRestantes > 0 ? projetarResto(reds.otm)  : bancaAgora;
+  const bfReal = diasRestantes > 0 ? projetarResto(reds.real) : bancaAgora;
+  const bfPess = diasRestantes > 0 ? projetarResto(reds.pess) : bancaAgora;
+
+  const subtitulo = diasJogados.length > 0
+    ? `${diasJogados.length} dias jogados · ${diasRestantes} restantes · banca atual ${fR(bancaAgora)}`
+    : 'Nenhum dia registrado ainda — projeção do mês completo';
+
+  document.getElementById('cen-subtitulo').textContent = subtitulo;
+
+  document.getElementById('cen-grid').innerHTML=`
+    <div class="cen otm"><div class="cen-lbl">Otimista</div><div class="cen-val otm">${fR(bfOtm)}</div><div class="cen-sub">${fL(bfOtm-bi)}</div><div class="cen-reds">${reds.otm} reds/sem · ${greensEfetivos(reds.otm).toFixed(1)} g/dia</div></div>
+    <div class="cen real"><div class="cen-lbl">Realista</div><div class="cen-val real">${fR(bfReal)}</div><div class="cen-sub">${fL(bfReal-bi)}</div><div class="cen-reds">${reds.real} reds/sem · ${greensEfetivos(reds.real).toFixed(1)} g/dia</div></div>
+    <div class="cen pess"><div class="cen-lbl">Pessimista</div><div class="cen-val pess">${fR(bfPess)}</div><div class="cen-sub">${fL(bfPess-bi)}</div><div class="cen-reds">${reds.pess} reds/sem · ${greensEfetivos(reds.pess).toFixed(1)} g/dia</div></div>`;
+
+  const diasComSessao=st.diario.filter(x=>x.sessoes.length>0);
+  const dHoje=Math.min(diaAtual(),dias);
+  let html='';
+  if(!diasComSessao.length){
+    html=`<div class="empty"><div class="empty-ico">📈</div>Nenhum dia registrado ainda</div>`;
+  } else {
+    for(const dObj of diasComSessao){
+      const d=dObj.dia, bancaDia=dObj.banca, lGreen=calcSessaoCenario(bancaDia), isHoje=d===dHoje;
+      html+=`<div class="proj-row${isHoje?' hoje':''}">
+        <span class="proj-num">${d}</span>
+        <span class="proj-val">${fR(bancaDia)}</span>
+        <span class="proj-val ${lc(lGreen)}">${fL(lGreen)}</span>
+        <span class="proj-val ${lc(dObj.lucro)}">${fL(dObj.lucro)}</span>
+      </div>`;
+    }
+    const proxNum=diasComSessao[diasComSessao.length-1].dia+1;
+    if(proxNum<=dias){
+      html+=`<div class="proj-row" style="opacity:0.45">
+        <span class="proj-num">${proxNum}</span>
+        <span class="proj-val">${fR(bancaAtual())}</span>
+        <span class="proj-val lz">—</span><span class="proj-val lz">—</span>
+      </div>`;
+    }
+  }
+  document.getElementById('proj-list').innerHTML=html;
+}
+
+// ── MESES ─────────────────────────────────────────────────
+let chartLucro=null, chartBanca=null;
+
+function renderMeses() {
+  const el=document.getElementById('meses-list');
+  const ca=document.getElementById('charts-area');
+
+  if(!meses.length){
+    el.innerHTML=`<div class="empty"><div class="empty-ico">📅</div>Nenhum mês fechado ainda.<br>Complete o mês e feche pelo Histórico.</div>`;
+    ca.innerHTML=''; return;
+  }
+
+  // cards
+  el.innerHTML=meses.map((m,i)=>`
+    <div class="mes-card">
+      <div class="mes-hd">
+        <div class="mes-label">${m.label}</div>
+        <div class="mes-retorno ${lc(m.lucro)}">${fPct(m.retorno)}</div>
+      </div>
+      <div class="mes-stats">
+        <div class="mes-stat">Banca ini <span>${fR(m.bancaIni)}</span></div>
+        <div class="mes-stat">Banca fim <span>${fR(m.bancaFim)}</span></div>
+        <div class="mes-stat">Lucro <span class="${lc(m.lucro)}">${fL(m.lucro)}</span></div>
+        ${m.saque > 0 ? '<div class="mes-stat">Saque <span class="ln">-' + fR(m.saque) + '</span></div>' : ''}
+        <div class="mes-stat">Reinvestido <span>${fR(m.bancaProximo||m.bancaFim)}</span></div>
+        <div class="mes-stat">Greens <span class="lp">${m.greens}</span></div>
+        <div class="mes-stat">Reds <span class="ln">${m.reds}</span></div>
+        <div class="mes-stat">Dias <span>${m.dias}</span></div>
+      </div>
+      <div style="margin-top:10px;text-align:right">
+        <button onclick="excluirMes(${i})" style="font-size:11px;padding:4px 10px;background:var(--rbg);color:var(--red);border:1px solid var(--rbd);border-radius:6px;cursor:pointer;font-family:'Syne',sans-serif">Excluir</button>
+      </div>
+    </div>`).join('');
+
+  // gráficos
+  const labels=meses.map(m=>m.label);
+  const dataLucro=meses.map(m=>m.lucro);
+  const dataBanca=meses.map(m=>m.bancaFim);
+  const colorsLucro=dataLucro.map(v=>v>=0?'rgba(74,222,128,0.7)':'rgba(248,113,113,0.7)');
+
+  ca.innerHTML=`
+    <div class="chart-wrap"><div class="chart-title">Lucro por mês (R$)</div><canvas id="chart-lucro" style="height:200px;max-height:200px"></canvas></div>
+    <div class="chart-wrap"><div class="chart-title">Banca final por mês (R$)</div><canvas id="chart-banca" style="height:200px;max-height:200px"></canvas></div>`;
+
+  if(chartLucro) chartLucro.destroy();
+  if(chartBanca) chartBanca.destroy();
+
+  const baseOpts = {
+    responsive:true, maintainAspectRatio:true, aspectRatio:2.2,
+    animation: false,
+    plugins:{ legend:{display:false}, tooltip:{
+      backgroundColor:'#1e1e1e', titleColor:'#f0f0f0', bodyColor:'#999',
+      borderColor:'rgba(255,255,255,0.1)', borderWidth:1, padding:10,
+      callbacks:{ label: ctx => 'R$ ' + ctx.parsed.y.toFixed(2).replace('.',',') }
+    }},
+    scales:{
+      x:{ ticks:{color:'#666',font:{size:10},maxRotation:45}, grid:{display:false}, border:{display:false} },
+      y:{ ticks:{color:'#666',font:{size:10},callback:v=>'R$'+v.toFixed(0)}, grid:{color:'rgba(255,255,255,0.06)'}, border:{display:false} }
+    }
+  };
+
+  chartLucro=new Chart(document.getElementById('chart-lucro'),{
+    type:'bar',
+    data:{labels,datasets:[{
+      data:dataLucro,
+      backgroundColor:colorsLucro,
+      borderRadius:4,
+      borderSkipped:false,
+      barPercentage:0.6
+    }]},
+    options: JSON.parse(JSON.stringify(baseOpts))
+  });
+  chartBanca=new Chart(document.getElementById('chart-banca'),{
+    type:'bar',
+    data:{labels,datasets:[{
+      data:dataBanca,
+      backgroundColor:'rgba(96,165,250,0.7)',
+      borderRadius:4,
+      borderSkipped:false,
+      barPercentage:0.6
+    }]},
+    options: JSON.parse(JSON.stringify(baseOpts))
+  });
+}
+
+function excluirMes(i) {
+  showModal('Excluir mês', 'Excluir o mês "' + meses[i].label + '"? Esta ação não tem volta.', [
+    { label:'Cancelar', cls:'cancel', action:()=>{} },
+    { label:'Excluir', cls:'danger', action:()=>{ meses.splice(i,1); saveMeses(); renderMeses(); toast('Mês excluído.'); } }
+  ]);
+}
+
+// ── CONFIG ────────────────────────────────────────────────
+function atualizaCalc() {
+  const m1=parseFloat(document.getElementById('c-m1').value)||1.25;
+  const m2=parseFloat(document.getElementById('c-m2').value)||2.0;
+  const s=parseInt(document.getElementById('c-sessoes').value)||3;
+  const auto=calcRedsAuto(s,m1);
+  document.getElementById('c-pm1').textContent=(probCrash(m1)*100).toFixed(1)+'%';
+  document.getElementById('c-pm2').textContent=(probCrash(m2)*100).toFixed(1)+'%';
+  document.getElementById('c-rotm-auto').textContent=`(auto: ${auto.otm})`;
+  document.getElementById('c-rreal-auto').textContent=`(auto: ${auto.real})`;
+  document.getElementById('c-rpess-auto').textContent=`(auto: ${auto.pess})`;
+}
+function carregarConfig() {
+  document.getElementById('c-banca').value=C('bancaIni');
+  document.getElementById('c-risco').value=C('risco');
+  document.getElementById('c-sessoes').value=C('sessoes');
+  document.getElementById('c-dias').value=C('dias');
+  document.getElementById('c-m1').value=C('m1');
+  document.getElementById('c-m2').value=C('m2');
+  const auto=calcRedsAuto(C('sessoes'),C('m1'));
+  document.getElementById('c-rotm').value=C('rOtm')!==null?C('rOtm'):auto.otm;
+  document.getElementById('c-rreal').value=C('rReal')!==null?C('rReal'):auto.real;
+  document.getElementById('c-rpess').value=C('rPess')!==null?C('rPess'):auto.pess;
+  atualizaCalc();
+  document.getElementById('c-m2').oninput=atualizaCalc;
+}
+function salvar() {
+  const m1=parseFloat(document.getElementById('c-m1').value)||1.25;
+  const s=parseInt(document.getElementById('c-sessoes').value)||3;
+  const auto=calcRedsAuto(s,m1);
+  const rOtmI=parseInt(document.getElementById('c-rotm').value);
+  const rRealI=parseInt(document.getElementById('c-rreal').value);
+  const rPessI=parseInt(document.getElementById('c-rpess').value);
+  st.config={
+    bancaIni:parseFloat(document.getElementById('c-banca').value)||100,
+    risco:parseFloat(document.getElementById('c-risco').value)||10,
+    sessoes:s, dias:parseInt(document.getElementById('c-dias').value)||30,
+    m1, m2:parseFloat(document.getElementById('c-m2').value)||2.0,
+    rOtm:rOtmI===auto.otm?null:rOtmI,
+    rReal:rRealI===auto.real?null:rRealI,
+    rPess:rPessI===auto.pess?null:rPessI,
+  };
+  save(); toast('Configurações salvas!'); go('hoje');
+}
+function resetarTudo() {
+  showModal('Resetar tudo', 'Apaga TODOS os dados: mês atual e histórico de todos os meses. Não tem volta.', [
+    { label:'Cancelar', cls:'cancel', action:()=>{} },
+    { label:'Apagar tudo', cls:'danger', action:()=>{
+        st={config:defCfg(),diario:[]}; meses=[];
+        save(); saveMeses(); carregarConfig(); renderHoje(); renderMiniHist();
+        toast('Todos os dados apagados.'); go('hoje');
+      }
+    }
+  ]);
+}
+
+// ── NAV ───────────────────────────────────────────────────
+function go(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const ni=document.getElementById('nav-'+page);
+  if(ni) ni.classList.add('active');
+  if(page==='hist')   renderHist();
+  if(page==='proj')   renderProj();
+  if(page==='meses')  renderMeses();
+  if(page==='config') carregarConfig();
+}
+
+// ── INIT ──────────────────────────────────────────────────
+const now=new Date();
+document.getElementById('hdate').textContent=now.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'}).toUpperCase();
+renderHoje();
+renderMiniHist();
+</script>
+</body>
+</html>
