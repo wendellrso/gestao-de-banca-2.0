@@ -173,6 +173,9 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
     <div class="sess-row" id="sess-row"></div>
     <div class="act-row" id="act-row"></div>
     <div class="aposta-info" id="aposta-info"></div>
+    <div style="margin-top:8px">
+      <button onclick="abrirAjuste()" style="width:100%;padding:9px;background:transparent;border:1px solid var(--border2);border-radius:var(--rs);color:var(--muted);font-size:12px;font-family:'Syne',sans-serif;cursor:pointer;letter-spacing:0.3px">+ Ajuste de saldo</button>
+    </div>
   </div>
   <div class="sec-title">Últimos dias <a onclick="go('hist')">ver tudo →</a></div>
   <div id="mini-hist"></div>
@@ -629,6 +632,81 @@ function renderHoje() {
 }
 
 // ── MINI HIST ─────────────────────────────────────────────
+function abrirAjuste() {
+  const bf = bancaAtual();
+  document.getElementById('modal-title').textContent = 'Ajuste de saldo';
+  document.getElementById('modal-msg').innerHTML =
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Banca atual: <strong style="color:var(--text);font-family:DM Mono,monospace">' + fR(bf) + '</strong></div>' +
+    '<div style="display:flex;gap:6px;margin-bottom:10px">' +
+      '<button id="aj-tipo-pos" onclick="setAjTipo(1)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--gbd);background:var(--gbg);color:var(--green);font-weight:700;font-family:Syne,sans-serif;cursor:pointer;font-size:14px">+ Entrada</button>' +
+      '<button id="aj-tipo-neg" onclick="setAjTipo(-1)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-weight:700;font-family:Syne,sans-serif;cursor:pointer;font-size:14px">− Saída</button>' +
+    '</div>' +
+    '<input class="saque-input" id="aj-val" type="number" min="0" step="0.01" placeholder="0,00" style="margin-bottom:8px">' +
+    '<input id="aj-desc" type="text" placeholder="Motivo (ex: reembolso, teimosia...)" style="width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:10px 14px;font-size:13px;font-family:Syne,sans-serif;outline:none;box-sizing:border-box">';
+  window._ajTipo = 1;
+  const btns = document.getElementById('modal-btns');
+  btns.innerHTML = '';
+  const bc = document.createElement('button');
+  bc.className='modal-btn cancel'; bc.textContent='Cancelar'; bc.onclick=closeModal;
+  const bk = document.createElement('button');
+  bk.className='modal-btn confirm'; bk.textContent='Aplicar';
+  bk.onclick = () => {
+    const val = parseFloat(document.getElementById('aj-val').value) || 0;
+    const desc = document.getElementById('aj-desc').value.trim() || 'Ajuste manual';
+    if(!val){ toast('Informe um valor.'); return; }
+    closeModal();
+    aplicarAjuste(window._ajTipo * val, desc);
+  };
+  btns.appendChild(bc); btns.appendChild(bk);
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function setAjTipo(tipo) {
+  window._ajTipo = tipo;
+  const pos = document.getElementById('aj-tipo-pos');
+  const neg = document.getElementById('aj-tipo-neg');
+  if(tipo === 1) {
+    pos.style.cssText='flex:1;padding:8px;border-radius:8px;border:1px solid var(--gbd);background:var(--gbg);color:var(--green);font-weight:700;font-family:Syne,sans-serif;cursor:pointer;font-size:14px';
+    neg.style.cssText='flex:1;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-weight:700;font-family:Syne,sans-serif;cursor:pointer;font-size:14px';
+  } else {
+    neg.style.cssText='flex:1;padding:8px;border-radius:8px;border:1px solid var(--rbd);background:var(--rbg);color:var(--red);font-weight:700;font-family:Syne,sans-serif;cursor:pointer;font-size:14px';
+    pos.style.cssText='flex:1;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-weight:700;font-family:Syne,sans-serif;cursor:pointer;font-size:14px';
+  }
+}
+
+function aplicarAjuste(valor, descricao) {
+  // Garante que existe um dia aberto
+  if(!st.diario.length || st.diario[st.diario.length-1].sessoes.length >= C('sessoes')) {
+    iniciarDia();
+  }
+  const d = st.diario[st.diario.length-1];
+  if(!d.ajustes) d.ajustes = [];
+  d.ajustes.push({ valor: Math.round(valor*100)/100, desc: descricao });
+  // Recalcula lucro do dia incluindo ajustes
+  const totalAjustes = d.ajustes.reduce((a,aj)=>a+aj.valor, 0);
+  const { lucroGreen, perdaRed } = calcSessao(d.banca);
+  let lucroSessoes = 0;
+  d.sessoes.forEach(v => {
+    if(v==='green') lucroSessoes = Math.round((lucroSessoes+lucroGreen)*100)/100;
+    else            lucroSessoes = Math.round((lucroSessoes-perdaRed)*100)/100;
+  });
+  d.lucro = Math.round((lucroSessoes + totalAjustes)*100)/100;
+  d.bancaFim = Math.round((d.banca + d.lucro)*100)/100;
+  // Recalcula dias seguintes
+  for(let i=st.diario.indexOf(d)+1;i<st.diario.length;i++){
+    st.diario[i].banca = st.diario[i-1].bancaFim;
+    const {lucroGreen:lg,perdaRed:pr}=calcSessao(st.diario[i].banca);
+    let l=0;
+    st.diario[i].sessoes.forEach(v=>{ if(v==='green') l=Math.round((l+lg)*100)/100; else l=Math.round((l-pr)*100)/100; });
+    const taj = (st.diario[i].ajustes||[]).reduce((a,aj)=>a+aj.valor,0);
+    st.diario[i].lucro = Math.round((l+taj)*100)/100;
+    st.diario[i].bancaFim = Math.round((st.diario[i].banca+st.diario[i].lucro)*100)/100;
+  }
+  save();
+  toast((valor>0?'+':'')+fR(valor)+' — '+descricao);
+  renderHoje(); renderMiniHist();
+}
+
 function histItemHTML(d, diaIdx, showDel) {
   const numS=C('sessoes');
   let dots='';
@@ -637,16 +715,22 @@ function histItemHTML(d, diaIdx, showDel) {
     dots+=`<div class="hdot ${v==='green'?'g':v==='red'?'r':'e'}"></div>`;
   }
   const delBtn=showDel?`<button class="btn-del" onclick="excluirDia(${diaIdx})">✕</button>`:'';
-  return `<div class="hist-item">
-    <div class="hist-left">
-      <div class="hist-dia">Dia ${d.dia}</div>
-      <div class="hist-dots">${dots}</div>
+  const ajustesHtml = (d.ajustes||[]).map(aj=>
+    `<span style="font-size:10px;font-family:'DM Mono',monospace;padding:2px 6px;border-radius:4px;background:${aj.valor>=0?'var(--gbg)':'var(--rbg)'};color:${aj.valor>=0?'var(--green)':'var(--red)'}">${aj.valor>=0?'+':''}${fR(aj.valor)} ${aj.desc}</span>`
+  ).join('');
+  return `<div class="hist-item" style="flex-direction:column;align-items:stretch;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div class="hist-left">
+        <div class="hist-dia">Dia ${d.dia}</div>
+        <div class="hist-dots">${dots}</div>
+      </div>
+      <div class="hist-right">
+        <div class="hist-lucro ${lc(d.lucro)}">${fL(d.lucro)}</div>
+        <div class="hist-banca">${fR(d.bancaFim)}</div>
+      </div>
+      ${delBtn}
     </div>
-    <div class="hist-right">
-      <div class="hist-lucro ${lc(d.lucro)}">${fL(d.lucro)}</div>
-      <div class="hist-banca">${fR(d.bancaFim)}</div>
-    </div>
-    ${delBtn}
+    ${ajustesHtml ? `<div style="display:flex;gap:4px;flex-wrap:wrap">${ajustesHtml}</div>` : ''}
   </div>`;
 }
 
