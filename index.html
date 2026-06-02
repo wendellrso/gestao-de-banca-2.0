@@ -320,13 +320,16 @@ function getRedsConf() {
 }
 function greensEfetivos(rpw) { return C('sessoes') - rpw/7; }
 
-// Sessão (diário) — fórmula exata da planilha
+// Sessão — risco total travado em 10% da banca
+// apM1 + apM2 = banca × risco% (nunca ultrapassa o risco configurado)
+// apM1 = total × (1/m1)  →  apM2 = total - apM1 = total × (1 - 1/m1)
 function calcSessao(banca) {
   const risco = C('risco')/100, m1=C('m1'), m2=C('m2');
-  const apM1 = Math.min(Math.round(banca*risco), 500);
-  const apM2 = Math.round(apM1*(m1-1));
+  const total = Math.min(Math.round(banca*risco*100)/100, 500);
+  const apM1  = Math.round((total / m1)*100)/100;
+  const apM2  = Math.round((total - apM1)*100)/100;
   const lucroGreen = (apM1*(m1-1)) + (apM2*(m2-1));
-  const perdaRed   = apM1 + apM2;
+  const perdaRed   = apM1 + apM2; // = total, sempre <= risco%
   return { apM1, apM2, lucroGreen:Math.round(lucroGreen*100)/100, perdaRed:Math.round(perdaRed*100)/100, custoRed:Math.round(perdaRed/lucroGreen*10)/10 };
 }
 function calcSessaoCenario(banca) { return calcSessao(banca).lucroGreen; }
@@ -621,7 +624,8 @@ function renderHoje() {
     ban.innerHTML=`<div class="banner warn">Dia encerrado no vermelho.</div>`;
   } else { ban.innerHTML=''; }
 
-  const bancaDoDia=(d&&d.banca)?d.banca:banca;
+  // Se o dia está concluído, usa banca atual (início do próximo dia); senão, usa banca de início do dia em curso
+  const bancaDoDia = dayDone ? bancaAtual() : (d&&d.banca ? d.banca : banca);
   const {apM1,apM2,lucroGreen,perdaRed,custoRed}=calcSessao(bancaDoDia);
   document.getElementById('aposta-info').innerHTML=`
     <div class="ap-item">M1 <span>${fR(apM1)}</span></div>
