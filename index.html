@@ -413,6 +413,9 @@ function _editarSessao(diaIdx, sessIdx) {
     if(v==='green'){d.greens++;d.lucro=Math.round((d.lucro+lucroGreen)*100)/100;}
     else           {d.reds++;  d.lucro=Math.round((d.lucro-perdaRed )*100)/100;}
   });
+  // preserva ajustes de saldo no lucro
+  const totalAj = (d.ajustes||[]).reduce((a,aj)=>a+aj.valor,0);
+  d.lucro = Math.round((d.lucro+totalAj)*100)/100;
   d.bancaFim=Math.round((d.banca+d.lucro)*100)/100;
   for(let i=diaIdx+1;i<st.diario.length;i++){
     const prev=st.diario[i-1];
@@ -814,7 +817,7 @@ function renderProj() {
     <div class="cen real"><div class="cen-lbl">Realista</div><div class="cen-val real">${fR(bfReal)}</div><div class="cen-sub">${fL(bfReal-bi)}</div><div class="cen-reds">${reds.real} reds/sem · ${greensEfetivos(reds.real).toFixed(1)} g/dia</div></div>
     <div class="cen pess"><div class="cen-lbl">Pessimista</div><div class="cen-val pess">${fR(bfPess)}</div><div class="cen-sub">${fL(bfPess-bi)}</div><div class="cen-reds">${reds.pess} reds/sem · ${greensEfetivos(reds.pess).toFixed(1)} g/dia</div></div>`;
 
-  const diasComSessao=st.diario.filter(x=>x.sessoes.length>0);
+  const diasComSessao=st.diario.filter(x=>x.sessoes.length>0||(x.ajustes&&x.ajustes.length>0));
   const dHoje=Math.min(diaAtual(),dias);
   let html='';
   if(!diasComSessao.length){
