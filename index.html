@@ -74,6 +74,10 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 .hist-lucro{font-size:14px;font-weight:600;font-family:'DM Mono',monospace}
 .hist-banca{font-size:11px;color:var(--muted);margin-top:1px}
 .btn-del{width:28px;height:28px;border-radius:6px;background:var(--rbg);border:1px solid var(--rbd);color:var(--red);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hist-check{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border2);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.hist-check.selected{background:var(--green);border-color:var(--green);color:#000;font-size:13px}
+.sel-bar{position:fixed;bottom:calc(var(--nav) + var(--sb));left:0;right:0;z-index:49;background:var(--surface);border-top:1px solid var(--border2);padding:10px 16px;display:flex;gap:8px}
+.sel-bar button{flex:1;height:44px;border-radius:var(--rs);font-size:14px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;border:none}
 /* CONFIG */
 .cfg-section{margin-bottom:18px}
 .cfg-title{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
@@ -138,6 +142,23 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
 .toast.show{opacity:1}
 
 .lp{color:var(--green)}.ln{color:var(--red)}.lz{color:var(--muted)}
+.ext-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.ext-item:last-child{border-bottom:none}
+.ext-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.ext-icon.pos{background:var(--gbg)}
+.ext-icon.neg{background:var(--rbg)}
+.ext-icon.adj{background:var(--ybg)}
+.ext-icon.saque{background:var(--bbg)}
+.ext-icon.ini{background:rgba(255,255,255,0.06)}
+.ext-body{flex:1;min-width:0}
+.ext-title{font-size:13px;font-weight:500}
+.ext-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.ext-right{text-align:right;flex-shrink:0}
+.ext-val{font-size:14px;font-weight:700;font-family:'DM Mono',monospace}
+.ext-banca{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:1px}
+.ext-mes-header{background:var(--surface);border-radius:var(--rs);padding:10px 14px;margin:14px 0 6px;display:flex;align-items:center;justify-content:space-between}
+.ext-mes-label{font-size:12px;font-weight:700;letter-spacing:0.3px}
+.ext-mes-retorno{font-size:11px;font-family:'DM Mono',monospace}
 .empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
 .empty-ico{font-size:32px;margin-bottom:8px}
 </style>
@@ -187,9 +208,16 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
   <div id="fechar-mes-area"></div>
   <div class="sec-title">
     Histórico completo
-    <a onclick="limparMesAtual()">limpar tudo</a>
+    <div style="display:flex;gap:12px">
+      <a id="btn-selecionar" onclick="toggleSelecao()">selecionar</a>
+      <a onclick="limparMesAtual()">limpar tudo</a>
+    </div>
   </div>
   <div id="hist-list"></div>
+  <div class="sel-bar" id="sel-bar" style="display:none">
+    <button style="background:var(--surface2);color:var(--muted);border:1px solid var(--border)" onclick="toggleSelecao()">Cancelar</button>
+    <button id="btn-del-sel" style="background:var(--red);color:#000" onclick="excluirSelecionados()">Excluir (<span id="sel-count">0</span>)</button>
+  </div>
 </div>
 
 <!-- PROJECAO -->
@@ -207,6 +235,13 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
   <div id="charts-area"></div>
   <div class="sec-title">Histórico por mês</div>
   <div id="meses-list"></div>
+</div>
+
+<!-- EXTRATO -->
+<div class="page" id="page-extrato">
+  <div id="extrato-resumo" style="margin-bottom:14px"></div>
+  <div class="sec-title">Movimentações</div>
+  <div id="extrato-list"></div>
 </div>
 
 <!-- CONFIG -->
@@ -240,7 +275,7 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-he
   <div class="nav-item" id="nav-hist" onclick="go('hist')"><span class="nav-icon">≡</span><span>Histórico</span></div>
   <div class="nav-item" id="nav-proj" onclick="go('proj')"><span class="nav-icon">↗</span><span>Projeção</span></div>
   <div class="nav-item" id="nav-meses" onclick="go('meses')"><span class="nav-icon">📅</span><span>Meses</span></div>
-  <div class="nav-item" id="nav-config" onclick="go('config')"><span class="nav-icon">⚙</span><span>Config</span></div>
+  <div class="nav-item" id="nav-extrato" onclick="go('extrato')"><span class="nav-icon">📋</span><span>Extrato</span></div>
 </nav>
 
 <!-- MODAL -->
@@ -463,6 +498,67 @@ function proximoDia() {
 }
 
 // ── FECHAR MÊS ────────────────────────────────────────────
+let modoSelecao = false;
+let diasSelecionados = new Set();
+
+function toggleSelecao() {
+  modoSelecao = !modoSelecao;
+  diasSelecionados.clear();
+  document.getElementById('sel-bar').style.display = modoSelecao ? 'flex' : 'none';
+  document.getElementById('btn-selecionar').textContent = modoSelecao ? 'cancelar' : 'selecionar';
+  atualizaContador();
+  renderHist();
+}
+
+function toggleDia(diaIdx) {
+  if(diasSelecionados.has(diaIdx)) diasSelecionados.delete(diaIdx);
+  else diasSelecionados.add(diaIdx);
+  atualizaContador();
+  renderHist();
+}
+
+function atualizaContador() {
+  document.getElementById('sel-count').textContent = diasSelecionados.size;
+  const btn = document.getElementById('btn-del-sel');
+  btn.style.opacity = diasSelecionados.size > 0 ? '1' : '0.4';
+  btn.style.cursor  = diasSelecionados.size > 0 ? 'pointer' : 'default';
+}
+
+function excluirSelecionados() {
+  if(!diasSelecionados.size) return;
+  showModal(
+    'Excluir dias selecionados',
+    diasSelecionados.size + ' dia(s) serão excluídos. Os dias seguintes serão recalculados.',
+    [
+      { label:'Cancelar', cls:'cancel', action:()=>{} },
+      { label:'Excluir', cls:'danger', action:()=>{
+        // Remove do maior índice para o menor para não deslocar
+        const indices = [...diasSelecionados].sort((a,b)=>b-a);
+        indices.forEach(idx => {
+          st.diario.splice(idx, 1);
+        });
+        // Renumera e recalcula banca em cascata
+        for(let i=0; i<st.diario.length; i++){
+          st.diario[i].dia = i+1;
+          st.diario[i].banca = i===0 ? C('bancaIni') : st.diario[i-1].bancaFim;
+          const {lucroGreen:lg, perdaRed:pr} = calcSessao(st.diario[i].banca);
+          let l=0;
+          st.diario[i].sessoes.forEach(v=>{ if(v==='green') l=Math.round((l+lg)*100)/100; else l=Math.round((l-pr)*100)/100; });
+          const taj=(st.diario[i].ajustes||[]).reduce((a,aj)=>a+aj.valor,0);
+          st.diario[i].lucro=Math.round((l+taj)*100)/100;
+          st.diario[i].bancaFim=Math.round((st.diario[i].banca+st.diario[i].lucro)*100)/100;
+        }
+        save();
+        modoSelecao=false; diasSelecionados.clear();
+        document.getElementById('sel-bar').style.display='none';
+        document.getElementById('btn-selecionar').textContent='selecionar';
+        toast(indices.length+' dia(s) excluído(s).');
+        renderHoje(); renderMiniHist(); renderHist();
+      }}
+    ]
+  );
+}
+
 function limparMesAtual() {
   showModal('Limpar mês atual', 'Apaga todos os dias registrados neste mês. Os meses fechados não são afetados.', [
     { label:'Cancelar', cls:'cancel', action:()=>{} },
@@ -523,10 +619,11 @@ function fecharMes(saque) {
   const totR    = diasValidos.reduce((a,d)=>a+d.reds,0);
   const bancaProximo = Math.max(0, Math.round((bf - saque)*100)/100);
 
+  const dataFechamento = now.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric'});
   meses.push({
     label: labelAuto, mes: now.getMonth()+1, ano: now.getFullYear(),
     bancaIni:bi, bancaFim:bf, saque, bancaProximo, lucro, retorno,
-    greens:totG, reds:totR, dias:diasValidos.length,
+    greens:totG, reds:totR, dias:diasValidos.length, dataFechamento,
     diario: diasValidos.map(d=>({dia:d.dia,lucro:d.lucro,greens:d.greens,reds:d.reds}))
   });
   saveMeses();
@@ -576,7 +673,17 @@ function renderHoje() {
   document.getElementById('s-greens').textContent=d.greens;
   document.getElementById('s-reds').textContent=d.reds;
   const sl=document.getElementById('s-lucro');
-  sl.textContent=d.sessoes.length?fL(d.lucro):'R$0'; sl.className='stat-val '+lc(d.lucro);
+  // Resultado do dia = lucro das sessões de hoje + ajustes de hoje (não acumulado)
+  const { lucroGreen:lgHoje, perdaRed:prHoje } = calcSessao(d.banca || bancaAtual());
+  let lucroSessoesHoje = 0;
+  (d.sessoes||[]).forEach(v => {
+    if(v==='green') lucroSessoesHoje = Math.round((lucroSessoesHoje+lgHoje)*100)/100;
+    else            lucroSessoesHoje = Math.round((lucroSessoesHoje-prHoje)*100)/100;
+  });
+  const ajustesHoje = (d.ajustes||[]).reduce((a,aj)=>a+aj.valor,0);
+  const lucroDisplayHoje = Math.round((lucroSessoesHoje+ajustesHoje)*100)/100;
+  sl.textContent = d.sessoes.length||ajustesHoje ? fL(lucroDisplayHoje) : 'R$0';
+  sl.className = 'stat-val '+lc(lucroDisplayHoje);
 
   const dIdx=st.diario.findIndex(x=>x===d);
   const numS=C('sessoes');
@@ -649,7 +756,7 @@ function abrirAjuste() {
       '<button id="aj-tipo-neg" onclick="setAjTipo(-1)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted);font-weight:700;font-family:Syne,sans-serif;cursor:pointer;font-size:14px">− Saída</button>' +
     '</div>' +
     '<input class="saque-input" id="aj-val" type="number" min="0" step="0.01" placeholder="0,00" style="margin-bottom:8px">' +
-    '<input id="aj-desc" type="text" placeholder="Motivo (ex: reembolso, teimosia...)" style="width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:10px 14px;font-size:13px;font-family:Syne,sans-serif;outline:none;box-sizing:border-box">';
+    '<input id="aj-desc" type="text" placeholder="Motivo" style="width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:10px 14px;font-size:13px;font-family:Syne,sans-serif;outline:none;box-sizing:border-box">';
   window._ajTipo = 1;
   const btns = document.getElementById('modal-btns');
   btns.innerHTML = '';
@@ -725,9 +832,15 @@ function histItemHTML(d, diaIdx, showDel) {
   const ajustesHtml = (d.ajustes||[]).map(aj=>
     `<span style="font-size:10px;font-family:'DM Mono',monospace;padding:2px 6px;border-radius:4px;background:${aj.valor>=0?'var(--gbg)':'var(--rbg)'};color:${aj.valor>=0?'var(--green)':'var(--red)'}">${aj.valor>=0?'+':''}${fR(aj.valor)} ${aj.desc}</span>`
   ).join('');
-  return `<div class="hist-item" style="flex-direction:column;align-items:stretch;gap:8px">
+  const isSel = diasSelecionados.has(diaIdx);
+  const checkEl = modoSelecao
+    ? `<div class="hist-check ${isSel?'selected':''}" onclick="toggleDia(${diaIdx})">${isSel?'✓':''}</div>`
+    : '';
+  const rowClick = modoSelecao ? `onclick="toggleDia(${diaIdx})" style="cursor:pointer"` : '';
+  return `<div class="hist-item${isSel?' selected':''}" style="flex-direction:column;align-items:stretch;gap:8px;${isSel?'border-color:var(--green);background:rgba(74,222,128,0.05)':''}" ${rowClick}>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <div class="hist-left">
+      ${checkEl}
+      <div class="hist-left" style="flex:1">
         <div class="hist-dia">Dia ${d.dia}</div>
         <div class="hist-dots">${dots}</div>
       </div>
@@ -735,7 +848,7 @@ function histItemHTML(d, diaIdx, showDel) {
         <div class="hist-lucro ${lc(d.lucro)}">${fL(d.lucro)}</div>
         <div class="hist-banca">${fR(d.bancaFim)}</div>
       </div>
-      ${delBtn}
+      ${modoSelecao ? '' : delBtn}
     </div>
     ${ajustesHtml ? `<div style="display:flex;gap:4px;flex-wrap:wrap">${ajustesHtml}</div>` : ''}
   </div>`;
@@ -992,6 +1105,134 @@ function resetarTudo() {
   ]);
 }
 
+// ── EXTRATO ──────────────────────────────────────────────
+function renderExtrato() {
+  const elList = document.getElementById('extrato-list');
+  const elRes  = document.getElementById('extrato-resumo');
+
+  // Constrói linha do tempo: meses fechados + mês atual
+  const linhas = [];
+
+  // Meses fechados (histórico)
+  meses.forEach(m => {
+    linhas.push({ tipo:'mes-header', label: m.label, lucro: m.lucro, retorno: m.retorno });
+    linhas.push({ tipo:'ini', desc:'Banca inicial', banca: m.bancaIni, val: null });
+
+    // dias do mês salvo
+    (m.diario||[]).forEach(d => {
+      if(d.lucro !== 0) {
+        linhas.push({
+          tipo: d.lucro >= 0 ? 'pos' : 'neg',
+          desc: 'Dia ' + d.dia + ' — ' + d.greens + ' green' + (d.greens!==1?'s':'') + ', ' + d.reds + ' red' + (d.reds!==1?'s':''),
+          val: d.lucro,
+          banca: null
+        });
+      }
+    });
+
+    if(m.saque > 0) {
+      linhas.push({ tipo:'saque', desc:'Saque' + (m.dataFechamento ? ' · ' + m.dataFechamento : ''), val: -m.saque, banca: null });
+    }
+    linhas.push({ tipo:'ini', desc:'Banca final reinvestida', banca: m.bancaProximo || m.bancaFim, val: null });
+  });
+
+  // Mês atual
+  const diasValidos = st.diario.filter(x => x.sessoes.length > 0 || (x.ajustes && x.ajustes.length > 0));
+  if(diasValidos.length) {
+    const mesLabel = C('mesAtual') || 'Mês atual';
+    linhas.push({ tipo:'mes-header', label: mesLabel, lucro: acumulado(), retorno: (acumulado()/C('bancaIni'))*100 });
+    linhas.push({ tipo:'ini', desc:'Banca inicial', banca: C('bancaIni'), val: null });
+
+    diasValidos.forEach(d => {
+      // Resultado das sessões
+      if(d.sessoes.length > 0) {
+        const lucroSessoes = (() => {
+          const {lucroGreen:lg, perdaRed:pr} = calcSessao(d.banca);
+          let l=0;
+          d.sessoes.forEach(v => { if(v==='green') l=Math.round((l+lg)*100)/100; else l=Math.round((l-pr)*100)/100; });
+          return l;
+        })();
+        linhas.push({
+          tipo: lucroSessoes >= 0 ? 'pos' : 'neg',
+          desc: 'Dia ' + d.dia + ' — ' + d.greens + ' green' + (d.greens!==1?'s':'') + ', ' + d.reds + ' red' + (d.reds!==1?'s':''),
+          val: lucroSessoes,
+          banca: d.bancaFim
+        });
+      }
+      // Ajustes do dia
+      (d.ajustes||[]).forEach(aj => {
+        linhas.push({
+          tipo: aj.valor < 0 ? 'saque' : 'adj',
+          desc: aj.desc || 'Ajuste manual',
+          val: aj.valor,
+          banca: null
+        });
+      });
+    });
+
+    linhas.push({ tipo:'ini', desc:'Banca atual', banca: bancaAtual(), val: null, destaque: true });
+  }
+
+  if(!linhas.length) {
+    elList.innerHTML = `<div class="empty"><div class="empty-ico">📋</div>Nenhuma movimentação ainda</div>`;
+    elRes.innerHTML = '';
+    return;
+  }
+
+  // Resumo geral
+  const totalLucro = meses.reduce((a,m)=>a+m.lucro,0) + acumulado();
+  // Saques = saque ao fechar mês + ajustes de saída (valor negativo)
+  const totalSaquesFecho = meses.reduce((a,m)=>a+(Number(m.saque)||0),0);
+  const totalAjSaidaMeses = meses.reduce((a,m)=>a+(m.diario||[]).reduce((b,d)=>b,0),0); // diário salvo não tem ajustes detalhados
+  const totalAjSaidaAtual = st.diario.reduce((a,d)=>{
+    const saidas = (d.ajustes||[]).filter(aj=>aj.valor<0).reduce((s,aj)=>s+Math.abs(aj.valor),0);
+    return a+saidas;
+  },0);
+  const totalSaques = totalSaquesFecho + totalAjSaidaAtual;
+  elRes.innerHTML = `
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val ${lc(totalLucro)}">${fL(totalLucro)}</div><div class="stat-lbl">Lucro total</div></div>
+      <div class="stat"><div class="stat-val ${totalSaques>0?'ln':'lz'}">${totalSaques>0?'-'+fR(totalSaques):'R$0,00'}</div><div class="stat-lbl">Saques/Saídas</div></div>
+      <div class="stat"><div class="stat-val">${fR(bancaAtual())}</div><div class="stat-lbl">Banca atual</div></div>
+    </div>`;
+
+  // Renderiza linhas
+  let html = '';
+  linhas.forEach(l => {
+    if(l.tipo === 'mes-header') {
+      html += `<div class="ext-mes-header">
+        <span class="ext-mes-label">📅 ${l.label}</span>
+        <span class="ext-mes-retorno ${lc(l.lucro)}">${fL(l.lucro)} · ${fPct(l.retorno)}</span>
+      </div>`;
+      return;
+    }
+    if(l.tipo === 'ini') {
+      html += `<div class="ext-item">
+        <div class="ext-icon ini">🏦</div>
+        <div class="ext-body"><div class="ext-title">${l.desc}</div></div>
+        <div class="ext-right">
+          <div class="ext-val" style="${l.destaque?'color:var(--gold)':''}">${fR(l.banca)}</div>
+        </div>
+      </div>`;
+      return;
+    }
+    const icons = { pos:'📈', neg:'📉', adj:'🔧', saque:'💸' };
+    const iconCls = { pos:'pos', neg:'neg', adj:'adj', saque:'saque' };
+    html += `<div class="ext-item">
+      <div class="ext-icon ${iconCls[l.tipo]}">${icons[l.tipo]}</div>
+      <div class="ext-body">
+        <div class="ext-title">${l.desc}</div>
+        ${l.banca ? `<div class="ext-banca">saldo: ${fR(l.banca)}</div>` : ''}
+      </div>
+      <div class="ext-right">
+        <div class="ext-val ${lc(l.val)}">${fL(l.val)}</div>
+      </div>
+    </div>`;
+  });
+
+  elList.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px 16px">${html}</div>`;
+}
+
 // ── NAV ───────────────────────────────────────────────────
 function go(page) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -999,10 +1240,11 @@ function go(page) {
   document.getElementById('page-'+page).classList.add('active');
   const ni=document.getElementById('nav-'+page);
   if(ni) ni.classList.add('active');
-  if(page==='hist')   renderHist();
-  if(page==='proj')   renderProj();
-  if(page==='meses')  renderMeses();
-  if(page==='config') carregarConfig();
+  if(page==='hist')    renderHist();
+  if(page==='proj')    renderProj();
+  if(page==='meses')   renderMeses();
+  if(page==='extrato') renderExtrato();
+  if(page==='config')  carregarConfig();
 }
 
 // ── INIT ──────────────────────────────────────────────────
